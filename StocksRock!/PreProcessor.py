@@ -74,6 +74,13 @@ class PreProcessor:
         movMax128 = s.resample("1D").fillna('ffill').rolling(window=128).max()
         movMax256 = s.resample("1D").fillna('ffill').rolling(window=256).max()
 
+        movMed8 = s.resample("1D").fillna('ffill').rolling(window=8).median()
+        movMed16 = s.resample("1D").fillna('ffill').rolling(window=16).median()
+        movMed32 = s.resample("1D").fillna('ffill').rolling(window=32).median()
+        movMed64 = s.resample("1D").fillna('ffill').rolling(window=64).median()
+        movMed128 = s.resample("1D").fillna('ffill').rolling(window=128).median()
+        movMed256 = s.resample("1D").fillna('ffill').rolling(window=256).median()
+
         for i, d in enumerate(self.dates):
             df.at[d, 'dayVec1']   = dayVec1[i]
             df.at[d, 'dayVec2']   = dayVec2[i]
@@ -105,6 +112,13 @@ class PreProcessor:
             df.at[d, 'movMax64']  = self.closes[i] / movMax64[d] - 1
             df.at[d, 'movMax128'] = self.closes[i] / movMax128[d] - 1
             df.at[d, 'movMax256'] = self.closes[i] / movMax256[d] - 1
+
+            df.at[d, 'movMed8'] = self.closes[i] / movMed8[d] - 1
+            df.at[d, 'movMed16'] = self.closes[i] / movMed16[d] - 1
+            df.at[d, 'movMed32'] = self.closes[i] / movMed32[d] - 1
+            df.at[d, 'movMed64'] = self.closes[i] / movMed64[d] - 1
+            df.at[d, 'movMed128'] = self.closes[i] / movMed128[d] - 1
+            df.at[d, 'movMed256'] = self.closes[i] / movMed256[d] - 1
 
             df.at[d, 'dayVec1Forward']   = dayVec1Forward[i]
             df.at[d, 'dayVec2Forward']   = dayVec2Forward[i]
