@@ -4,6 +4,9 @@ from dateutil import parser
 
 from StockUrl import StockUrl
 
+# import gtrends
+from pytrends.request import TrendReq
+
 class PreProcessor:
 
     def __init__(self, company, startDate, endDate, source):
@@ -14,6 +17,9 @@ class PreProcessor:
         else:
             raise ValueError("Invalid source")
         self.data = pandas.read_csv(url, parse_dates=True, names=['Date', 'Open', 'High', 'Low', 'Close', 'Volume'], header=0)
+        self.company = company
+        self.startDate = startDate
+        self.endDate = endDate
 
     def getData(self):
         self.dates  = [parser.parse(x) for x in self.data['Date'].values]
@@ -27,6 +33,10 @@ class PreProcessor:
         self.highs.reverse()
         self.lows.reverse()
         self.closes.reverse()
+
+        terms = ["stock", self.company]
+        print(self.getTrendData(terms))
+
 
     def createCSV(self):
         columns=['dayVec' + str(2**x) for x in range(0, 9)]
@@ -53,33 +63,42 @@ class PreProcessor:
         s = pandas.Series(self.closes, self.dates)
         s.cumsum()
 
-        movAvg8   = s.resample("1D").fillna('ffill').rolling(window=8).mean()
-        movAvg16  = s.resample("1D").fillna('ffill').rolling(window=16).mean()
-        movAvg32  = s.resample("1D").fillna('ffill').rolling(window=32).mean()
-        movAvg64  = s.resample("1D").fillna('ffill').rolling(window=64).mean()
-        movAvg128 = s.resample("1D").fillna('ffill').rolling(window=128).mean()
-        movAvg256 = s.resample("1D").fillna('ffill').rolling(window=256).mean()
+        # resampled = s.resample("1D").fillna('ffill')
+        resampled = s.interpolate(method='polynomial', order=1)
+        movAvg8   = resampled.rolling(window=8).mean()
+        movAvg16  = resampled.rolling(window=16).mean()
+        movAvg32  = resampled.rolling(window=32).mean()
+        movAvg64  = resampled.rolling(window=64).mean()
+        movAvg128 = resampled.rolling(window=128).mean()
+        movAvg256 = resampled.rolling(window=256).mean()
 
-        movMin8   = s.resample("1D").fillna('ffill').rolling(window=8).min()
-        movMin16  = s.resample("1D").fillna('ffill').rolling(window=16).min()
-        movMin32  = s.resample("1D").fillna('ffill').rolling(window=32).min()
-        movMin64  = s.resample("1D").fillna('ffill').rolling(window=64).min()
-        movMin128 = s.resample("1D").fillna('ffill').rolling(window=128).min()
-        movMin256 = s.resample("1D").fillna('ffill').rolling(window=256).min()
+        movMin8   = resampled.rolling(window=8).min()
+        movMin16  = resampled.rolling(window=16).min()
+        movMin32  = resampled.rolling(window=32).min()
+        movMin64  = resampled.rolling(window=64).min()
+        movMin128 = resampled.rolling(window=128).min()
+        movMin256 = resampled.rolling(window=256).min()
 
-        movMax8   = s.resample("1D").fillna('ffill').rolling(window=8).max()
-        movMax16  = s.resample("1D").fillna('ffill').rolling(window=16).max()
-        movMax32  = s.resample("1D").fillna('ffill').rolling(window=32).max()
-        movMax64  = s.resample("1D").fillna('ffill').rolling(window=64).max()
-        movMax128 = s.resample("1D").fillna('ffill').rolling(window=128).max()
-        movMax256 = s.resample("1D").fillna('ffill').rolling(window=256).max()
+        movMax8   = resampled.rolling(window=8).max()
+        movMax16  = resampled.rolling(window=16).max()
+        movMax32  = resampled.rolling(window=32).max()
+        movMax64  = resampled.rolling(window=64).max()
+        movMax128 = resampled.rolling(window=128).max()
+        movMax256 = resampled.rolling(window=256).max()
 
-        movMed8 = s.resample("1D").fillna('ffill').rolling(window=8).median()
-        movMed16 = s.resample("1D").fillna('ffill').rolling(window=16).median()
-        movMed32 = s.resample("1D").fillna('ffill').rolling(window=32).median()
-        movMed64 = s.resample("1D").fillna('ffill').rolling(window=64).median()
-        movMed128 = s.resample("1D").fillna('ffill').rolling(window=128).median()
-        movMed256 = s.resample("1D").fillna('ffill').rolling(window=256).median()
+        movMed8 = resampled.rolling(window=8).median()
+        movMed16 = resampled.rolling(window=16).median()
+        movMed32 = resampled.rolling(window=32).median()
+        movMed64 = resampled.rolling(window=64).median()
+        movMed128 = resampled.rolling(window=128).median()
+        movMed256 = resampled.rolling(window=256).median()
+
+        movSTD8 = resampled.rolling(window=8).std()
+        movSTD16 = resampled.rolling(window=16).std()
+        movSTD32 = resampled.rolling(window=32).std()
+        movSTD64 = resampled.rolling(window=64).std()
+        movSTD128 = resampled.rolling(window=128).std()
+        movSTD256 = resampled.rolling(window=256).std()
 
         for i, d in enumerate(self.dates):
             df.at[d, 'dayVec1']   = dayVec1[i]
@@ -120,6 +139,13 @@ class PreProcessor:
             df.at[d, 'movMed128'] = self.closes[i] / movMed128[d] - 1
             df.at[d, 'movMed256'] = self.closes[i] / movMed256[d] - 1
 
+            df.at[d, 'movSTD8'] = self.closes[i] / movSTD8[d] - 1
+            df.at[d, 'movSTD16'] = self.closes[i] / movSTD16[d] - 1
+            df.at[d, 'movSTD32'] = self.closes[i] / movSTD32[d] - 1
+            df.at[d, 'movSTD64'] = self.closes[i] / movSTD64[d] - 1
+            df.at[d, 'movSTD128'] = self.closes[i] / movSTD128[d] - 1
+            df.at[d, 'movSTD256'] = self.closes[i] / movSTD256[d] - 1
+
             df.at[d, 'dayVec1Forward']   = dayVec1Forward[i]
             df.at[d, 'dayVec2Forward']   = dayVec2Forward[i]
             df.at[d, 'dayVec4Forward']   = dayVec4Forward[i]
@@ -128,7 +154,7 @@ class PreProcessor:
             df.at[d, 'dayVec32Forward']  = dayVec32Forward[i]
             df.at[d, 'dayVec64Forward']  = dayVec64Forward[i]
 
-        df.to_csv("test.csv")
+        df.to_csv("processed_csv/" + self.company + ".csv")
 
     def createVectorForDateRange(self, days):
         vector = [None for x in range(0, days)]
@@ -145,10 +171,17 @@ class PreProcessor:
         vector += [None for x in range(0, days)]
         return vector
 
+    def getTrendData(self, terms):
+        # return gtrends.collectTrends("stockdatamining@gmail.com", "jeffPhillips", terms, self.startDate, self.endDate)
+        pytrend = TrendReq("stockdatamining@gmail.com", "JeffPhillips", hl='en-US', tz=360, custom_useragent=None)
+        pytrend.build_payload(terms, timeframe='all ')
+        interest_over_time_df = pytrend.interest_over_time()
+        print(interest_over_time_df.head(20))
+
 
 if __name__ == "__main__":
-    start = datetime.datetime(1990, 1, 1)
-    end = datetime.date.today()
-    p = PreProcessor('AAPL', start, end, 'Google')
+    start = datetime.datetime(2004, 1, 1)
+    end = datetime.datetime.now()
+    p = PreProcessor('AMZN', start, end, 'Google')
     p.getData()
     p.createCSV()

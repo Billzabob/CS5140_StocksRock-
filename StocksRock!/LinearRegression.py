@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 
 
 class LinearAnalyzer:
-    def __init__(self, filename, xColumns, yColumns, cvPercent):
-        data = pandas.read_csv(filename)
+    def __init__(self, company, xColumns, yColumns, cvPercent):
+        data = pandas.read_csv("processed_csv/" + company + ".csv")
         self.xVectors = []
         self.yVectors = []
         self.xVectorsCV = []
@@ -51,7 +51,6 @@ class LinearAnalyzer:
         guesses64 = []
         actuals64 = []
 
-        avgError4DError = 0
         for i, r in enumerate(self.xVectorsCV):
             guess = self.pipeline.predict(np.asarray(r).reshape(1, -1))
             guesses4.append(guess[0][2])
@@ -59,10 +58,6 @@ class LinearAnalyzer:
             actual = self.yVectorsCV[i]
             actuals4.append(actual[2])
             actuals64.append(actual[6])
-
-            #     Calculate avg error
-            avgError4DError += abs(guess[0][2])
-        avgError4DError /= len(guesses4)
 
         plt.title('Cross Validation of 4 Day Percent Change')
         plt.xlabel('day')
@@ -85,13 +80,17 @@ class LinearAnalyzer:
         print('64 day absoluteError:', self.calculateAvgError(guesses64, actuals64, method='absolute'))
         print('64 day squared Error:', self.calculateAvgError(guesses64, actuals64))
 
+        print('4 day within 1 percent range:', self.cvWithInRange(.01, guesses4, actuals4))
+        print('64 day within 5 percent range:', self.cvWithInRange(.05, guesses64, actuals64))
+
+
     def calculateAvgError(self, guesses, actuals, method='squared'):
         if len(guesses) != len(actuals):
             raise ValueError()
         avgError = 0
         for i in range(len(guesses)):
             if method == 'squared':
-                avgError += (guesses[i] - actuals[i])**2
+                avgError += (guesses[i] - actuals[i]) ** 2
             elif method == 'absolute':
                 avgError += abs(guesses[i] - actuals[i])
             else:
@@ -100,18 +99,37 @@ class LinearAnalyzer:
 
         return avgError
 
-
+    # Gives percent of cross validation data that fell within range
+    def cvWithInRange(self, maxDif, guesses, actuals):
+        if len(guesses) != len(actuals):
+            raise ValueError()
+        count = 0
+        for i in range(len(guesses)):
+            if abs(guesses[i] - actuals[i]) <= maxDif:
+                count += 1
+        return count / len(guesses)
 
 
 if __name__ == "__main__":
-    lr = LinearAnalyzer("test.csv", ['dayVec1', 'dayVec2', 'dayVec4', 'dayVec8', 'dayVec16', 'dayVec32', 'dayVec64',
-                                     'dayVec128', 'dayVec256', 'movAvg8', 'movAvg16', 'movAvg32', 'movAvg64',
-                                     'movAvg128', 'movAvg256', 'movMin8', 'movMin16', 'movMin32', 'movMin64',
-                                     'movMin128', 'movMin256', 'movMax8', 'movMax16', 'movMax32', 'movMax64',
-                                     'movMax128', 'movMax256', 'movMed8', 'movMed16', 'movMed32', 'movMed64',
-                                     'movMed128', 'movMed256'],
+    movMedColumns = ['movMed8', 'movMed16', 'movMed32', 'movMed64', 'movMed128', 'movMed256']
+    movStdColumns = ['movSTD8', 'movSTD16', 'movSTD32', 'movSTD64', 'movSTD128', 'movSTD256']
+    movMaxColumns = ['movMax8', 'movMax16', 'movMax32', 'movMax64', 'movMax128', 'movMax256']
+    movMinColumns = ['movMin8', 'movMin16', 'movMin32', 'movMin64', 'movMin128', 'movMin256']
+    movAvgColumns = ['movAvg8', 'movAvg16', 'movAvg32', 'movAvg64', 'movAvg128', 'movAvg256']
+    dayVecColumns = ['dayVec1', 'dayVec2', 'dayVec4', 'dayVec8', 'dayVec16', 'dayVec32', 'dayVec64', 'dayVec128',
+                     'dayVec256']
+
+    lr = LinearAnalyzer("AMZN", dayVecColumns + movAvgColumns + movMinColumns + movMaxColumns + movMedColumns +
+                        movStdColumns,
                         ['dayVec1Forward', 'dayVec2Forward', 'dayVec4Forward', 'dayVec8Forward', 'dayVec16Forward',
                          'dayVec32Forward', 'dayVec64Forward'],
                         .05)
     lr.fit()
     lr.crossValidate()
+
+    # 4 day squared Error: 0.000687573754629
+    # 4 day absolute Error: 0.0198123237429
+    # 64 day absoluteError: 0.08337641521
+    # 64 day squared Error: 0.0102408909382
+
+
