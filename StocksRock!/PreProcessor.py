@@ -42,6 +42,38 @@ class PreProcessor:
         dayVec128 = self.createVectorForDateRange(128)
         dayVec256 = self.createVectorForDateRange(256)
 
+        dayVec1Forward   = self.createVectorForDateRangeForward(1)
+        dayVec2Forward   = self.createVectorForDateRangeForward(2)
+        dayVec4Forward   = self.createVectorForDateRangeForward(4)
+        dayVec8Forward   = self.createVectorForDateRangeForward(8)
+        dayVec16Forward  = self.createVectorForDateRangeForward(16)
+        dayVec32Forward  = self.createVectorForDateRangeForward(32)
+        dayVec64Forward  = self.createVectorForDateRangeForward(64)
+
+        s = pandas.Series(self.closes, self.dates)
+        s.cumsum()
+
+        movAvg8   = s.resample("1D").fillna('ffill').rolling(window=8).mean()
+        movAvg16  = s.resample("1D").fillna('ffill').rolling(window=16).mean()
+        movAvg32  = s.resample("1D").fillna('ffill').rolling(window=32).mean()
+        movAvg64  = s.resample("1D").fillna('ffill').rolling(window=64).mean()
+        movAvg128 = s.resample("1D").fillna('ffill').rolling(window=128).mean()
+        movAvg256 = s.resample("1D").fillna('ffill').rolling(window=256).mean()
+
+        movMin8   = s.resample("1D").fillna('ffill').rolling(window=8).min()
+        movMin16  = s.resample("1D").fillna('ffill').rolling(window=16).min()
+        movMin32  = s.resample("1D").fillna('ffill').rolling(window=32).min()
+        movMin64  = s.resample("1D").fillna('ffill').rolling(window=64).min()
+        movMin128 = s.resample("1D").fillna('ffill').rolling(window=128).min()
+        movMin256 = s.resample("1D").fillna('ffill').rolling(window=256).min()
+
+        movMax8   = s.resample("1D").fillna('ffill').rolling(window=8).max()
+        movMax16  = s.resample("1D").fillna('ffill').rolling(window=16).max()
+        movMax32  = s.resample("1D").fillna('ffill').rolling(window=32).max()
+        movMax64  = s.resample("1D").fillna('ffill').rolling(window=64).max()
+        movMax128 = s.resample("1D").fillna('ffill').rolling(window=128).max()
+        movMax256 = s.resample("1D").fillna('ffill').rolling(window=256).max()
+
         for i, d in enumerate(self.dates):
             df.at[d, 'dayVec1']   = dayVec1[i]
             df.at[d, 'dayVec2']   = dayVec2[i]
@@ -53,6 +85,35 @@ class PreProcessor:
             df.at[d, 'dayVec128'] = dayVec128[i]
             df.at[d, 'dayVec256'] = dayVec256[i]
 
+            df.at[d, 'movAvg8']   = self.closes[i] / movAvg8[d] - 1
+            df.at[d, 'movAvg16']  = self.closes[i] / movAvg16[d] - 1
+            df.at[d, 'movAvg32']  = self.closes[i] / movAvg32[d] - 1
+            df.at[d, 'movAvg64']  = self.closes[i] / movAvg64[d] - 1
+            df.at[d, 'movAvg128'] = self.closes[i] / movAvg128[d] - 1
+            df.at[d, 'movAvg256'] = self.closes[i] / movAvg256[d] - 1
+
+            df.at[d, 'movMin8']   = self.closes[i] / movMin8[d] - 1
+            df.at[d, 'movMin16']  = self.closes[i] / movMin16[d] - 1
+            df.at[d, 'movMin32']  = self.closes[i] / movMin32[d] - 1
+            df.at[d, 'movMin64']  = self.closes[i] / movMin64[d] - 1
+            df.at[d, 'movMin128'] = self.closes[i] / movMin128[d] - 1
+            df.at[d, 'movMin256'] = self.closes[i] / movMin256[d] - 1
+
+            df.at[d, 'movMax8']   = self.closes[i] / movMax8[d] - 1
+            df.at[d, 'movMax16']  = self.closes[i] / movMax16[d] - 1
+            df.at[d, 'movMax32']  = self.closes[i] / movMax32[d] - 1
+            df.at[d, 'movMax64']  = self.closes[i] / movMax64[d] - 1
+            df.at[d, 'movMax128'] = self.closes[i] / movMax128[d] - 1
+            df.at[d, 'movMax256'] = self.closes[i] / movMax256[d] - 1
+
+            df.at[d, 'dayVec1Forward']   = dayVec1Forward[i]
+            df.at[d, 'dayVec2Forward']   = dayVec2Forward[i]
+            df.at[d, 'dayVec4Forward']   = dayVec4Forward[i]
+            df.at[d, 'dayVec8Forward']   = dayVec8Forward[i]
+            df.at[d, 'dayVec16Forward']  = dayVec16Forward[i]
+            df.at[d, 'dayVec32Forward']  = dayVec32Forward[i]
+            df.at[d, 'dayVec64Forward']  = dayVec64Forward[i]
+
         df.to_csv("test.csv")
 
     def createVectorForDateRange(self, days):
@@ -60,6 +121,14 @@ class PreProcessor:
         for i in range(days, len(self.closes)):
             change = self.closes[i] / self.closes[i-days] - 1
             vector.append(change)
+        return vector
+
+    def createVectorForDateRangeForward(self, days):
+        vector = []
+        for i in range(0, len(self.closes) - days):
+            change = self.closes[i] / self.closes[i+days] - 1
+            vector.append(change)
+        vector += [None for x in range(0, days)]
         return vector
 
 
