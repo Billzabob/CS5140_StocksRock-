@@ -39,7 +39,7 @@ class LinearAnalyzer:
                 self.yVectorsCV.append(yRow)
 
     def fit(self):
-        polynomial_features = PolynomialFeatures(degree=1, include_bias=False)
+        polynomial_features = PolynomialFeatures(degree=1, include_bias=True)
         linear_regression = LinearRegression()
         self.pipeline = Pipeline(
             [("polynomial_features", polynomial_features), ("linear_regression", linear_regression)])
@@ -54,7 +54,9 @@ class LinearAnalyzer:
         for i, r in enumerate(self.xVectorsCV):
             guess = self.pipeline.predict(np.asarray(r).reshape(1, -1))
             guesses4.append(guess[0][2])
+            # guesses4.append(0)
             guesses64.append(guess[0][6])
+            # guesses64.append(0)
             actual = self.yVectorsCV[i]
             actuals4.append(actual[2])
             actuals64.append(actual[6])
@@ -83,6 +85,8 @@ class LinearAnalyzer:
         print('4 day within 1 percent range:', self.cvWithInRange(.01, guesses4, actuals4))
         print('64 day within 5 percent range:', self.cvWithInRange(.05, guesses64, actuals64))
 
+        print('4 day within 2 percent range:', self.cvWithInRange(.02, guesses4, actuals4))
+        print('64 day within 10 percent range:', self.cvWithInRange(.1, guesses64, actuals64))
 
     def calculateAvgError(self, guesses, actuals, method='squared'):
         if len(guesses) != len(actuals):
@@ -111,6 +115,11 @@ class LinearAnalyzer:
 
 
 if __name__ == "__main__":
+    xCols = open('xCols', 'r').read().split(',')
+    yCols = open('yCols', 'r').read().split(',')
+    print(xCols)
+    print(yCols)
+
     movMedColumns = ['movMed8', 'movMed16', 'movMed32', 'movMed64', 'movMed128', 'movMed256']
     movStdColumns = ['movSTD8', 'movSTD16', 'movSTD32', 'movSTD64', 'movSTD128', 'movSTD256']
     movMaxColumns = ['movMax8', 'movMax16', 'movMax32', 'movMax64', 'movMax128', 'movMax256']
@@ -118,18 +127,17 @@ if __name__ == "__main__":
     movAvgColumns = ['movAvg8', 'movAvg16', 'movAvg32', 'movAvg64', 'movAvg128', 'movAvg256']
     dayVecColumns = ['dayVec1', 'dayVec2', 'dayVec4', 'dayVec8', 'dayVec16', 'dayVec32', 'dayVec64', 'dayVec128',
                      'dayVec256']
+    trendColumns = ['movAvgTrends8', 'movAvgTrends16', 'movAvgTrends32', 'movAvgTrends64', 'movAvgTrends128',
+                    'movAvgTrends256']
 
-    lr = LinearAnalyzer("AMZN", dayVecColumns + movAvgColumns + movMinColumns + movMaxColumns + movMedColumns +
-                        movStdColumns,
-                        ['dayVec1Forward', 'dayVec2Forward', 'dayVec4Forward', 'dayVec8Forward', 'dayVec16Forward',
-                         'dayVec32Forward', 'dayVec64Forward'],
-                        .05)
+    # lr = LinearAnalyzer("AAPL", dayVecColumns + movAvgColumns + movMinColumns + movMaxColumns + movMedColumns +
+    #                     movStdColumns + trendColumns,
+    #                     ['dayVec1Forward', 'dayVec2Forward', 'dayVec4Forward', 'dayVec8Forward', 'dayVec16Forward',
+    #                      'dayVec32Forward', 'dayVec64Forward'],
+    #                     .1)
+
+    lr = LinearAnalyzer("AAPL", xCols, yCols,
+                        .1)
+
     lr.fit()
     lr.crossValidate()
-
-    # 4 day squared Error: 0.000687573754629
-    # 4 day absolute Error: 0.0198123237429
-    # 64 day absoluteError: 0.08337641521
-    # 64 day squared Error: 0.0102408909382
-
-
