@@ -45,6 +45,8 @@ class LinearAnalyzer:
             [("polynomial_features", polynomial_features), ("linear_regression", linear_regression)])
         self.pipeline.fit(self.xVectors, self.yVectors)
 
+
+
     def crossValidate(self):
         guesses4 = []
         actuals4 = []
@@ -142,7 +144,3 @@ if __name__ == "__main__":
     lr.fit()
     lr.crossValidate()
 
-# 4 day within 1 percent range: 0.20833333333333334
-# 64 day within 5 percent range: 0.25925925925925924
-# 4 day within 2 percent range: 0.4722222222222222
-# 64 day within 10 percent range: 0.4583333333333333
