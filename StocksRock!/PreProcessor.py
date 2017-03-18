@@ -101,22 +101,15 @@ class PreProcessor:
         movSTD128 = resampled.rolling(window=128).std()
         movSTD256 = resampled.rolling(window=256).std()
 
-        trendsData = self.pytrends.interest_over_time()
-        movAvgTrends8 = trendsData.rolling(window=8).mean()
-        movAvgTrends16 = trendsData.rolling(window=16).mean()
-        movAvgTrends32 = trendsData.rolling(window=32).mean()
-        movAvgTrends64 = trendsData.rolling(window=64).mean()
-        movAvgTrends128 = trendsData.rolling(window=128).mean()
-        movAvgTrends256 = trendsData.rolling(window=256).mean()
-
         meanTrendsData = []
         meanTrendsColumns = []
         allTrendSeries = []
 
         # For each term make a list of all series for window size from 8 to 256(doubling) and corresponding names
-        for term in terms:
-            allTrendSeries.append(trendsData[term].resample("1D").interpolate(method='polynomial', order=1))
-            meanTrendsData.append(self.getSeriesData(trendsData, 8, 256, name=term))
+        for i, term in enumerate(terms):
+            pytrends = self.allPyTrends[i].interest_over_time()
+            allTrendSeries.append(pytrends[term].resample("1D").interpolate(method='polynomial', order=1))
+            meanTrendsData.append(self.getSeriesData(pytrends, 8, 256, name=term))
             meanTrendsColumns.append(self.getColNames(8, 256, term + "trends"))
 
 
@@ -203,10 +196,17 @@ class PreProcessor:
         vector += [None for x in range(0, days)]
         return vector
 
-    def getTrendData(self, terms):
-        pytrends = TrendReq("stockdatamining@gmail.com", "JeffPhillips", hl='en-US', tz=360, custom_useragent=None)
-        pytrends.build_payload(terms, timeframe='all')
-        self.pytrends = pytrends
+    def getTrendData(self, searchTerms):
+        self.allPyTrends = []
+        # By passing in groups of terms it pits them against eachother biasing them, so instead make individual calls
+        for term in searchTerms:
+            arr = [term] # need list
+            pytrends = TrendReq("stockdatamining@gmail.com", "JeffPhillips", hl='en-US', tz=360, custom_useragent=None)
+            pytrends.build_payload(arr, timeframe='all')
+            self.allPyTrends.append(pytrends)
+
+
+
 
     @staticmethod
     def getSeriesData(data, start, end, incrementType='double', method='mean', name=''):
@@ -237,9 +237,9 @@ class PreProcessor:
 
 
 if __name__ == "__main__":
-    terms = ["AAPL", "Stocks", "Apple stock"]
-    start = datetime.datetime(2004, 1, 1)
+    terms = ["Bear Market", "Bull Market", "Motorola", "MSI", "MSI Buy", "When to buy stocks", "When to sell stocks"]
+    start = datetime.datetime(2006, 1, 1)
     end = datetime.datetime(2017, 3, 1)
-    p = PreProcessor('AAPL', terms, start, end, 'Google')
+    p = PreProcessor('MSI', terms, start, end, 'Google')
     p.getData()
     p.createCSV()

@@ -39,7 +39,7 @@ class LinearAnalyzer:
                 self.yVectorsCV.append(yRow)
 
     def fit(self):
-        polynomial_features = PolynomialFeatures(degree=1, include_bias=True)
+        polynomial_features = PolynomialFeatures(degree=1, include_bias=False)
         linear_regression = LinearRegression()
         self.pipeline = Pipeline(
             [("polynomial_features", polynomial_features), ("linear_regression", linear_regression)])
@@ -136,8 +136,13 @@ if __name__ == "__main__":
     #                      'dayVec32Forward', 'dayVec64Forward'],
     #                     .1)
 
-    lr = LinearAnalyzer("AAPL", xCols, yCols,
-                        .1)
+    lr = LinearAnalyzer("MSI", xCols, yCols,
+                        .3)
 
     lr.fit()
     lr.crossValidate()
+
+# 4 day within 1 percent range: 0.20833333333333334
+# 64 day within 5 percent range: 0.25925925925925924
+# 4 day within 2 percent range: 0.4722222222222222
+# 64 day within 10 percent range: 0.4583333333333333
