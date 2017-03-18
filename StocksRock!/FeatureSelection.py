@@ -44,11 +44,18 @@ if __name__ == "__main__":
     yCols = open('yCols', 'r').read().split(',')
     rlasso = RandomizedLasso(alpha=0.025)
     fs = FeatureSelection("AAPL", xCols, yCols,
-                        0)
+                        .1)
     transpose = zip(*fs.yVectors)
+
+    totalVec = np.zeros(len(xCols))
     for yVector in transpose:
         lr = LinearRegression()
         # rlasso.fit(fs.xVectors, yVector)
-        rfe = RFE(lr, n_features_to_select=1)
+        rfe = RFE(lr)
         rfe.fit(fs.xVectors, yVector)
-        print(sorted(zip(map(lambda x: round(x, 4), rfe.ranking_), xCols), reverse=False))
+        a = rfe.ranking_
+        totalVec += a
+
+    l = (sorted(zip(map(lambda x: round(x, 4), totalVec), xCols), reverse=False))
+    for i in range(int(len(l)/2)):
+        print(l[i][1] + ",", end="")

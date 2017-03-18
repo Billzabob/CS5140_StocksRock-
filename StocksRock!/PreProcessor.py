@@ -237,8 +237,8 @@ class PreProcessor:
 
 
 if __name__ == "__main__":
-    terms = ["Bear Market", "Bull Market", "Motorola", "MSI", "MSI Buy", "When to buy stocks", "When to sell stocks"]
-    start = datetime.datetime(2006, 1, 1)
+    terms = ["Bear Market", "Bull Market", "AAPL", "Apple", "AAPL Buy", "AAPL Sell", "When to buy stocks", "When to sell stocks"]
+    start = datetime.datetime(2010, 1, 1)
     end = datetime.datetime(2017, 3, 1)
     p = PreProcessor('MSI', terms, start, end, 'Google')
     p.getData()

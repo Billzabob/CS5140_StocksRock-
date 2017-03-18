@@ -15,6 +15,7 @@ class LinearAnalyzer:
         self.yVectors = []
         self.xVectorsCV = []
         self.yVectorsCV = []
+        self.futureX = []
         for i in range(0, len(data)):
             skip = False
             xRow = []
@@ -23,6 +24,8 @@ class LinearAnalyzer:
                 if not isinstance(val, numbers.Real) or math.isnan(val):
                     skip = True
                 xRow.append(val)
+            if skip:
+                continue
             yRow = []
             for y in yColumns:
                 val = data[y].values[i]
@@ -30,6 +33,7 @@ class LinearAnalyzer:
                     skip = True
                 yRow.append(val)
             if skip:
+                self.futureX.append(xRow)
                 continue
             if 1 - (i / len(data)) > cvPercent:
                 self.xVectors.append(xRow)
@@ -37,6 +41,10 @@ class LinearAnalyzer:
             else:
                 self.xVectorsCV.append(xRow)
                 self.yVectorsCV.append(yRow)
+        self.lastRow = []
+        for x in xColumns:
+            val = data[x].values[len(data) - 1]
+            self.lastRow.append(val)
 
     def fit(self):
         polynomial_features = PolynomialFeatures(degree=1, include_bias=False)
@@ -63,11 +71,18 @@ class LinearAnalyzer:
             actuals4.append(actual[2])
             actuals64.append(actual[6])
 
+        for i, r in enumerate(self.futureX):
+            guess = self.pipeline.predict(np.asarray(r).reshape(1, -1))
+            guesses4.append(guess[0][2])
+            # guesses4.append(0)
+            guesses64.append(guess[0][6])
+            # guesses64.append(0)
+
         plt.title('Cross Validation of 4 Day Percent Change')
         plt.xlabel('day')
         plt.ylabel('percent change')
         plt.plot(range(0, len(guesses4)), guesses4, 'r.', label='guess')
-        plt.plot(range(0, len(guesses4)), actuals4, 'b.', label='actual')
+        plt.plot(range(0, len(actuals4)), actuals4, 'b.', label='actual')
         plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
         plt.show()
@@ -76,7 +91,7 @@ class LinearAnalyzer:
         plt.xlabel('day')
         plt.ylabel('percent change')
         plt.plot(range(0, len(guesses64)), guesses64, 'r.', label='guess')
-        plt.plot(range(0, len(guesses64)), actuals64, 'b.', label='actual')
+        plt.plot(range(0, len(actuals64)), actuals64, 'b.', label='actual')
         plt.show()
 
         print('4 day squared Error:', self.calculateAvgError(guesses4, actuals4))
@@ -91,10 +106,8 @@ class LinearAnalyzer:
         print('64 day within 10 percent range:', self.cvWithInRange(.1, guesses64, actuals64))
 
     def calculateAvgError(self, guesses, actuals, method='squared'):
-        if len(guesses) != len(actuals):
-            raise ValueError()
         avgError = 0
-        for i in range(len(guesses)):
+        for i in range(len(actuals)):
             if method == 'squared':
                 avgError += (guesses[i] - actuals[i]) ** 2
             elif method == 'absolute':
@@ -107,13 +120,15 @@ class LinearAnalyzer:
 
     # Gives percent of cross validation data that fell within range
     def cvWithInRange(self, maxDif, guesses, actuals):
-        if len(guesses) != len(actuals):
-            raise ValueError()
         count = 0
-        for i in range(len(guesses)):
+        for i in range(len(actuals)):
             if abs(guesses[i] - actuals[i]) <= maxDif:
                 count += 1
         return count / len(guesses)
+
+    def predictRow(self, row):
+        return self.pipeline.predict(np.asarray(row).reshape(1, -1))
+
 
 
 if __name__ == "__main__":
@@ -138,9 +153,17 @@ if __name__ == "__main__":
     #                      'dayVec32Forward', 'dayVec64Forward'],
     #                     .1)
 
-    lr = LinearAnalyzer("MSI", xCols, yCols,
-                        .3)
+    lr = LinearAnalyzer("AAPL", xCols, yCols,
+                        .1)
 
     lr.fit()
     lr.crossValidate()
+    print(lr.predictRow(lr.lastRow))
+
+
+# 4 day within 1 percent range: 0.20833333333333334
+# 64 day within 5 percent range: 0.14351851851851852
+# 4 day within 2 percent range: 0.4351851851851852
+# 64 day within 10 percent range: 0.4027777777777778
+
 
